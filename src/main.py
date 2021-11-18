@@ -1,35 +1,33 @@
 import cv2
 import numpy as np
 
-R = 0.29
-x = np.array([0])
-y = np.array([0])
-theta = np.array([0])
+
+class Movement_matrix:
+    def __init__(self):
+        self.R = 0.29
+        self.x = np.array([0])
+        self.y = np.array([0])
+        self.theta = np.array([0])
+        self.t = 0.01
 
 
-def cal_v_and_omega(f_right,f_left):
-    v = R*(f_right+f_left)/(3200*2)
-    omega = R*(f_right-f_left)/(3200*2)
-    return v, omega
+    def cal_v_and_omega(self,f_right,f_left):
+        self.v = self.R*(f_right+f_left)/(3200*2)
+        self.omega = self.R*(f_right-f_left)/(3200*2)
+        return self.v, self.omega
 
-def calculate(x,y,theta,v,omega,t):
-    x_element = v*np.cos(theta[-1])*t + x[-1]
-    y_element = v*np.sin(theta[-1])*t + y[-1]
-    theta_element = omega*t + theta[-1]
-    x = np.append(x,x_element)
-    y = np.append(y,y_element)
-    theta =np.append(theta,theta_element)
-    return x, y, theta
+    def calculate(self):
+        x_element = self.v*np.cos(self.theta[-1])*self.t + self.x[-1]
+        y_element = self.v*np.sin(self.theta[-1])*self.t + self.y[-1]
+        theta_element = self.omega*self.t + self.theta[-1]
+        self.x = np.append(self.x,x_element)
+        self.y = np.append(self.y,y_element)
+        self.theta =np.append(self.theta,theta_element)
+        print(self.x)
+        return self.x, self.y, self.theta
 
 if __name__ == '__main__':
-    R = 0.29
-    x = np.array([0])
-    y = np.array([0])
-    theta = np.array([0])
-    t = 0.001
+    a = Movement_matrix()
     while True:
-        v, omega = cal_v_and_omega(100, 150)
-        # print(v,omega)
-        x, y, theta = calculate(x, y, theta, v, omega, t)
-        print(x,y,theta)
-        # print(len(x),len(y),len(theta))
+        a.cal_v_and_omega(100,150)
+        a.calculate()
