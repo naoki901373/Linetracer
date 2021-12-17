@@ -39,8 +39,8 @@ class Movement_matrix:
         y_element = np.sin(self.theta[-2]) * self.x[-1] + np.cos(self.theta[-2]) * self.y[-1]
         self.x = np.append(self.x,x_element)
         self.y = np.append(self.y,y_element)
-        print(self.x[-1])
-        print(self.y[-1])
+        # print(self.x[-1])
+        # print(self.y[-1])
         return self.x[-1], self.y[-1], self.theta[-1]
 
 
@@ -62,35 +62,37 @@ class Movement_Handler(Movement_matrix):
     def judge_movement(self,serial_string:str):
         if serial_string == 'l':
             self.turn_left()
-            print('l')
+            print('left')
 
         elif serial_string == 's':
             self.go_straight()
-            print('s')
+            print('straight')
 
 
         elif serial_string == 'r':
             self.turn_right()
-            print('r')
+            print('right')
 
 
         elif serial_string == 'e':
             pass
-            print('e')
+            print('error')
 
 
         else:
-            raise Exception()
+            print('no')
     
 
 if __name__ == '__main__':
     import serial
-    # ser = serial.Serial('COM4', 9600, timeout = 0.1)
-    # serial_str = ser.read()
+    ser = serial.Serial('COM3', 9600)
     a = Movement_Handler()
     while True:
-        serial_str = input()
-        s = input()
+        serial_str = ser.read()
+        print(serial_str)
+        serial_str = serial_str.decode()[0]
+        print(serial_str)
         a.judge_movement(serial_string = serial_str)
         sleep(0.1)
-    # ser.close()
+        print(a.x[-1],a.y[-1],a.theta[-1])
+    ser.close()
