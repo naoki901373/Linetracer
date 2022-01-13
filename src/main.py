@@ -1,64 +1,50 @@
+import cv2
 import numpy as np
-from time import sleep
-
 
 
 class Movement_matrix:
-
-    # 低レイヤークラス
-
     def __init__(self):
-        self.R = 0.29 # 車輪半径[m]
-        self.d = 0.4  # 車輪と車体中心までの距離[m]
-        self.pulse_num = 40 # パルス数
-        self.x = np.array([0.1]) # x座標のlist
-        self.y = np.array([0.1]) # y座標のlist
-        self.theta = np.array([0]) # thetaのlist
-        self.t = 0.01 # 時間 [s]
+        self.x = np.array([0])
+        self.y = np.array([0])
+        self.theta = np.array([0])
+        self.pulse = 10 # パルス波
+        self.D = 0.152 # 車体横幅 [m]
+        self.r = 0.057/2 # 車輪半径 [m]
+        self.L = 2 * np.pi * self.r * self.pulse / 50
 
-    def calculate_theta_l(self):
-        theta_element = self.theta[-1] + 2 * np.pi * self.R * self.pulse_num / 1600
-        self.theta = np.append(self.theta, theta_element)
-        # print(self.theta[-1])
-        return self.theta
+    def cal_delta_theta(self):
+        return self.L / self.D
+    
+    def turn_left(self):
+        theta = self.cal_delta_theta()
+        X = self.D * np.sin(theta/2) * np.cos(self.theta[-1] + theta) + self.x[-1]
+        Y = self.D * np.sin(theta/2) * np.sin(self.theta[-1] + theta) + self.y[-1]
+        self.x = np.append(self.x, X)
+        self.y = np.append(self.y, Y)
+        self.theta = np.append(self.theta, self.theta[-1] + theta)
+        return self.x, self.y, self.theta
 
-    def calculate_theta_r(self):
-        theta_element = self.theta[-1] - 2 * np.pi * self.R * self.pulse_num / 1600
-        self.theta = np.append(self.theta, theta_element)
-        # print(self.theta[-1])
-        return self.theta
+    def turn_right(self):
+        theta = self.cal_delta_theta()
+        X = self.D * np.sin(theta/2) * np.cos(self.theta[-1] - theta) + self.x[-1]
+        Y = self.D * np.sin(theta/2) * np.sin(self.theta[-1] - theta) + self.y[-1]
+        self.x = np.append(self.x, X)
+        self.y = np.append(self.y, Y)
+        self.theta = np.append(self.theta, self.theta[-1] - theta)
+        return self.x, self.y, self.theta
 
-    def calculate_theta_s(self):
-        theta_element = self.theta[-1]
-        self.theta = np.append(self.theta, theta_element)
-        # print(self.theta[-1])
-        return self.theta
-
-    def calculate_x_and_y(self):
-        x_element = np.cos(self.theta[-2]) * self.x[-1] - np.sin(self.theta[-2]) * self.y[-1]
-        y_element = np.sin(self.theta[-2]) * self.x[-1] + np.cos(self.theta[-2]) * self.y[-1]
-        self.x = np.append(self.x,x_element)
-        self.y = np.append(self.y,y_element)
-        # print(self.x[-1])
-        # print(self.y[-1])
-        return self.x[-1], self.y[-1], self.theta[-1]
-
+    def go_straight(self):
+        theta = self.theta[-1]
+        X = self.L * np.cos(theta) + self.x[-1]
+        Y = self.L * np.sin(theta) + self.y[-1]
+        self.x = np.append(self.x, X)
+        self.y = np.append(self.y, Y)
+        self.theta = np.append(self.theta, theta)
+        return self.x, self.y, self.theta
 
 
 class Movement_Handler(Movement_matrix):
     # 左折　直進　右折に対応したクラス
-    def turn_left(self):
-        self.calculate_theta_l()
-        self.calculate_x_and_y()
-
-    def go_straight(self):
-        self.calculate_theta_s()
-        self.calculate_x_and_y()
-
-    def turn_right(self):
-        self.calculate_theta_r()
-        self.calculate_x_and_y()
-
     def judge_movement(self,serial_string:str):
         if serial_string == 'l':
             self.turn_left()
@@ -75,24 +61,52 @@ class Movement_Handler(Movement_matrix):
 
 
         elif serial_string == 'e':
-            pass
+            # self.x.pop(-1)
+            # self.y.pop(-1)
+            # self.theta.pop(-1)
             print('error')
-
+            raise Exception()
 
         else:
             print('no')
-    
+
 
 if __name__ == '__main__':
     import serial
-    ser = serial.Serial('COM3', 9600)
+    import matplotlib.pyplot as plt 
+    import time
+    ser = serial.Serial('COM7', 9600)
     a = Movement_Handler()
+    st = time.time()
     while True:
-        serial_str = ser.read()
-        print(serial_str)
+        serial_str = ser.readline()
         serial_str = serial_str.decode()[0]
         print(serial_str)
+
+        if serial_str == 'f':
+            break
         a.judge_movement(serial_string = serial_str)
-        sleep(0.1)
-        print(a.x[-1],a.y[-1],a.theta[-1])
+        print(a.x,a.y,a.theta)
+        if time.time()-st >=30:
+            break
     ser.close()
+    print(f'length:{len(a.x)}')
+    plot_length = len(a.x)
+    start_point = np.array([a.x[0], a.y[0]])
+    end_point = np.array([a.x[-1], a.y[-1]])
+    vector = start_point - end_point
+    X = []
+    Y = []
+    reverse_x = a.x[::-1]
+    reverse_y = a.y[::-1]
+    for i in range(plot_length):
+        x = reverse_x[i] + vector[0] * (plot_length-i)/plot_length
+        y = reverse_y[i] + vector[1] * (plot_length-i)/plot_length
+        X.append(x)
+        Y.append(y)
+    X.reverse()
+    Y.reverse()
+    plt.plot(a.x, a.y)
+    plt.plot(X, Y)
+    plt.show()
+
