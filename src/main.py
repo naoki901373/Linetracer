@@ -1,6 +1,7 @@
-import cv2
 import numpy as np
-
+import serial
+import matplotlib.pyplot as plt 
+import time
 
 class Movement_matrix:
     def __init__(self):
@@ -61,9 +62,6 @@ class Movement_Handler(Movement_matrix):
 
 
         elif serial_string == 'e':
-            # self.x.pop(-1)
-            # self.y.pop(-1)
-            # self.theta.pop(-1)
             print('error')
             raise Exception()
 
@@ -72,9 +70,7 @@ class Movement_Handler(Movement_matrix):
 
 
 if __name__ == '__main__':
-    import serial
-    import matplotlib.pyplot as plt 
-    import time
+
     ser = serial.Serial('COM7', 9600)
     a = Movement_Handler()
     st = time.time()
